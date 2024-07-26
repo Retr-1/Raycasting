@@ -11,14 +11,14 @@ struct Player {
 
 
 struct RaycastResult { bool bHit; float distance; }	cast_ray(const olc::vf2d& start, const olc::vf2d& dir, const std::vector<std::vector<int>>& gameMap, const olc::vi2d& mapSize, float maxDistance = 100.0f) {
-	olc::vf2d unitHypotStep(sqrtf(1 + powf(dir.x / dir.y, 2.0f)), sqrtf(1 + powf(dir.y / dir.x, 2.0f)));
+	olc::vf2d unitHypotStep(sqrtf(1 + powf(dir.y / dir.x, 2.0f)), sqrtf(1 + powf(dir.x / dir.y, 2.0f)));
 	olc::vi2d unitStep;
 	olc::vf2d hypotLength(0, 0);
 	olc::vi2d mapCheck = start;
 
 	if (dir.x > 0) {
 		unitStep.x = 1;
-		hypotLength.x += (float(mapCheck.x) - start.x) * unitHypotStep.x;
+		hypotLength.x += (float(mapCheck.x+1) - start.x) * unitHypotStep.x;
 	}
 	else {
 		unitStep.x = -1;
@@ -27,7 +27,7 @@ struct RaycastResult { bool bHit; float distance; }	cast_ray(const olc::vf2d& st
 
 	if (dir.y > 0) {
 		unitStep.y = 1;
-		hypotLength.y += (float(mapCheck.y) - start.y) * unitHypotStep.y;
+		hypotLength.y += (float(mapCheck.y+1) - start.y) * unitHypotStep.y;
 	}
 	else {
 		unitStep.y = -1;
@@ -39,13 +39,13 @@ struct RaycastResult { bool bHit; float distance; }	cast_ray(const olc::vf2d& st
 	while (!bHit && distance < maxDistance) {
 		if (hypotLength.x < hypotLength.y) {
 			mapCheck.x += unitStep.x;
-			hypotLength.x += unitHypotStep.x;
 			distance = hypotLength.x;
+			hypotLength.x += unitHypotStep.x;
 		}
 		else {
 			mapCheck.y += unitStep.y;
-			hypotLength.y += unitHypotStep.y;
 			distance = hypotLength.y;
+			hypotLength.y += unitHypotStep.y;
 		}
 
 		if (mapCheck.x >= 0 && mapCheck.x < mapSize.x && mapCheck.y >= 0 && mapCheck.y < mapSize.y) {
@@ -120,7 +120,7 @@ class RaycastDebug : public olc::PixelGameEngine {
 			olc::vf2d nPPos = pPos / blockSize;
 			//olc::vf2d nMousePos = mousePos / blockSize;
 
-			std::cout << pPos.str() << ' ' << nPPos.str() << '\n';
+			std::cout << olc::vi2d(cols, rows).str() << ' ' << nPPos.str() << '\n';
 
 			auto result = cast_ray(nPPos, dir, field, olc::vi2d(cols,rows));
 			
@@ -361,7 +361,7 @@ int main()
 	//if (demo.Construct(800, 600, 2, 2))
 	//	demo.Start();
 	RaycastDebug window;
-	if (window.Construct(600, 600, 2, 2)) {
+	if (window.Construct(600, 600, 1, 1)) {
 		window.Start();
 	}
 	return 0;
