@@ -10,6 +10,134 @@ struct Player {
 };
 
 
+struct RaycastResult { bool bHit; float distance; }	cast_ray(const olc::vf2d& start, const olc::vf2d& dir, const std::vector<std::vector<int>>& gameMap, const olc::vi2d& mapSize, float maxDistance = 100.0f) {
+	olc::vf2d unitHypotStep(sqrtf(1 + powf(dir.x / dir.y, 2.0f)), sqrtf(1 + powf(dir.y / dir.x, 2.0f)));
+	olc::vi2d unitStep;
+	olc::vf2d hypotLength(0, 0);
+	olc::vi2d mapCheck = start;
+
+	if (dir.x > 0) {
+		unitStep.x = 1;
+		hypotLength.x += (float(mapCheck.x) - start.x) * unitHypotStep.x;
+	}
+	else {
+		unitStep.x = -1;
+		hypotLength.x += (start.x - float(mapCheck.x)) * unitHypotStep.x;
+	}
+
+	if (dir.y > 0) {
+		unitStep.y = 1;
+		hypotLength.y += (float(mapCheck.y) - start.y) * unitHypotStep.y;
+	}
+	else {
+		unitStep.y = -1;
+		hypotLength.y += (start.y - float(mapCheck.y)) * unitHypotStep.y;
+	}
+
+	float distance = 0.0f;
+	bool bHit = false;
+	while (!bHit && distance < maxDistance) {
+		if (hypotLength.x < hypotLength.y) {
+			mapCheck.x += unitStep.x;
+			hypotLength.x += unitHypotStep.x;
+			distance = hypotLength.x;
+		}
+		else {
+			mapCheck.y += unitStep.y;
+			hypotLength.y += unitHypotStep.y;
+			distance = hypotLength.y;
+		}
+
+		if (mapCheck.x >= 0 && mapCheck.x < mapSize.x && mapCheck.y >= 0 && mapCheck.y < mapSize.y) {
+			if (gameMap[mapCheck.y][mapCheck.x] == 1) {
+				bHit = true;
+			}
+		}
+	}
+
+	return { bHit, distance };
+}
+
+class RaycastDebug : public olc::PixelGameEngine {
+	vector<vector<int>> field;
+	int blockSize = 30;
+	int rows;
+	int cols;
+	olc::vf2d pPos;
+
+	bool OnUserCreate() override {
+		rows = ScreenHeight() / blockSize;
+		cols = ScreenWidth() / blockSize;
+
+		/*for (int x = 0; x < cols; x++) {
+			vector<int> v;
+			field.push_back(v);
+			for (int y = 0; y < rows; y++) {
+				v.push_back(0);
+			}
+		}*/
+
+		field = vector<vector<int>>(rows, vector<int>(cols, 0));
+		pPos.x = ScreenWidth() / 2;
+		pPos.y = ScreenHeight() / 2;
+
+		return true;
+	}
+
+	bool OnUserUpdate(float elapsedTime) override {
+		Clear(olc::BLACK);
+
+		const float speed = 100;
+		if (GetKey(olc::A).bHeld)
+			pPos.x -= speed * elapsedTime;
+		if (GetKey(olc::D).bHeld)
+			pPos.x += speed * elapsedTime;
+		if (GetKey(olc::W).bHeld)
+			pPos.y -= speed * elapsedTime;
+		if (GetKey(olc::S).bHeld)
+			pPos.y += speed * elapsedTime;
+
+
+		for (int x = 0; x < cols; x++) {
+			for (int y = 0; y < rows; y++) {
+				if (field[y][x] == 1) {
+					FillRect({ x * blockSize,y * blockSize }, { blockSize,blockSize }, olc::BLUE);
+				}
+				DrawRect({ x*blockSize,y*blockSize }, { blockSize,blockSize }, olc::WHITE);
+			}
+		}
+
+		if (GetMouse(olc::Mouse::RIGHT).bHeld) {
+			field[GetMouseY()/blockSize][GetMouseX()/blockSize] = 1;
+		}
+
+		if (GetMouse(olc::Mouse::LEFT).bHeld) {
+			olc::vf2d mousePos = GetMousePos();
+			olc::vf2d dir = mousePos - pPos;
+			dir = dir.norm();
+			
+
+			olc::vf2d nPPos = pPos / blockSize;
+			//olc::vf2d nMousePos = mousePos / blockSize;
+
+			std::cout << pPos.str() << ' ' << nPPos.str() << '\n';
+
+			auto result = cast_ray(nPPos, dir, field, olc::vi2d(cols,rows));
+			
+			olc::vf2d end = dir * result.distance*blockSize + pPos;
+			DrawLine(pPos, end, olc::YELLOW);
+			DrawCircle(end, 5, olc::YELLOW);
+			
+		}
+
+		FillCircle(pPos, 10, olc::GREEN);
+		FillCircle(GetMousePos(), 10, olc::RED);
+
+		return true;
+	}
+};
+
+
 // Override base class with your custom functionality
 class Game : public olc::PixelGameEngine
 {
@@ -19,7 +147,10 @@ private:
 		{1,0,0,0,0,0,1},
 		{1,0,0,0,0,0,1},
 		{1,0,0,0,0,0,1},
-		{1,0,0,0,1,0,1},
+		{1,0,0,0,0,0,1},
+		{1,0,1,1,1,0,1},
+		{1,0,0,1,0,0,1},
+		{1,0,1,1,1,0,1},
 		{1,0,0,0,0,0,1},
 		{1,1,1,1,1,1,1},
 	};
@@ -226,9 +357,13 @@ public:
 
 int main()
 {
-	Game demo;
-	if (demo.Construct(800, 600, 2, 2))
-		demo.Start();
+	//Game demo;
+	//if (demo.Construct(800, 600, 2, 2))
+	//	demo.Start();
+	RaycastDebug window;
+	if (window.Construct(600, 600, 2, 2)) {
+		window.Start();
+	}
 	return 0;
 }
 
