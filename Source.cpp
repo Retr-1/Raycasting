@@ -234,9 +234,6 @@ private:
 		int ceiling = (float)ScreenHeight() / 2 - delta;
 		int floor = (float)ScreenHeight() / 2 + delta;
 
-		// Clamping
-		ceiling = std::max(std::min(ceiling, ScreenHeight()), 0);
-		floor = std::max(std::min(floor, ScreenHeight()), 0);
 		
 		for (int y = 0; y < ceiling; y++) {
 			Draw(x, y, olc::BLUE);
@@ -261,7 +258,7 @@ private:
 			textureOffset = (hitPoint.y - (int)hitPoint.y);
 		}
 
-		for (int y = ceiling; y < floor; y++) {
+		for (int y = std::max(0,ceiling); y < std::min(ScreenHeight(),floor); y++) {
 			olc::Pixel wallColor = wallTexture->Sample(textureOffset, (y - ceiling) / (float)(floor - ceiling));
 			Draw(x, y, wallColor);
 		}
