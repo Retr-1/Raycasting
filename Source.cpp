@@ -3,6 +3,13 @@
 #include <vector>
 using namespace std;
 
+
+constexpr double PI = 3.1415926535;
+constexpr double AngleC = PI / 4.0;
+constexpr double AngleD = AngleC * 3.0;
+constexpr double AngleB = -AngleC;
+constexpr double AngleA = -AngleD;
+
 struct Player {
 	float x;
 	float y;
@@ -173,6 +180,8 @@ private:
 	float deltaFOV = FOV / rayCount;
 	float MAX_DISTANCE = 16;
 
+	olc::Sprite* wallTexture;
+
 	float dist(float x1, float y1, float x2, float y2) {
 		return sqrt(pow(x1 - x2, 2) + pow(y1 - y2, 2));
 	}
@@ -217,7 +226,9 @@ private:
 
 	void drawColumn(int x) {
 		float angle = x / ((float)ScreenWidth()) * FOV - HFOV + player.angle;
-		RaycastResult ray = shootRay(angle);
+		olc::vf2d direction(cosf(angle), sinf(angle));
+		olc::vf2d rayStart(player.x, player.y);
+		RaycastResult ray = cast_ray(rayStart, direction, gameMap, { W,H }, MAX_DISTANCE);
 		//std::cout << ray.distance << '|' << angle << "RAy\n";
 		float delta = (float)ScreenHeight() / ray.distance / 2;
 		int ceiling = (float)ScreenHeight() / 2 - delta;
@@ -228,18 +239,35 @@ private:
 		floor = std::max(std::min(floor, ScreenHeight()), 0);
 		
 		for (int y = 0; y < ceiling; y++) {
-			Draw({ x,y }, olc::BLUE);
+			Draw(x, y, olc::BLUE);
 		}
 
-		float depthPerc = 1 - (ray.distance / MAX_DISTANCE);
-		olc::Pixel wallColor = olc::Pixel(depthPerc * 255, depthPerc * 255, depthPerc * 255);
+		olc::vf2d hitPoint = direction * ray.distance + rayStart;
+		olc::vi2d blockPoint = hitPoint;
+		//olc::vf2d hitRemainder(hitPoint.x - (int)hitPoint.x, hitPoint.y - (int)hitPoint.y);
+		float textureOffset;
+		float textureAngle = std::atan2(hitPoint.y - blockPoint.y - 0.5f, hitPoint.x - blockPoint.x - 0.5f);
+		
+		if (textureAngle >= AngleA && textureAngle < AngleB) {
+			textureOffset = 1 - (hitPoint.x - (int)hitPoint.x);
+		}
+		else if (textureAngle >= AngleB && textureAngle < AngleC) {
+			textureOffset = 1 - (hitPoint.y - (int)hitPoint.y);
+		}
+		else if (textureAngle >= AngleC && textureAngle < AngleD) {
+			textureOffset = (hitPoint.x - (int)hitPoint.x);
+		}
+		else {
+			textureOffset = (hitPoint.y - (int)hitPoint.y);
+		}
 
 		for (int y = ceiling; y < floor; y++) {
-			Draw({ x,y }, wallColor);
+			olc::Pixel wallColor = wallTexture->Sample(textureOffset, (y - ceiling) / (float)(floor - ceiling));
+			Draw(x, y, wallColor);
 		}
 
 		for (int y = floor; y < ScreenHeight(); y++) {
-			Draw({ x,y }, olc::DARK_RED);
+			Draw(x, y, olc::DARK_RED);
 		}
 	}
 
@@ -285,6 +313,7 @@ public:
 	{
 		//raycast();
 		// Called once at the start, so create things here
+		wallTexture = new olc::Sprite("wall_texture_adj.JPG");
 		return true;
 	}
 

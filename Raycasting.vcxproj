@@ -24,6 +24,9 @@
   <ItemGroup>
     <ClInclude Include="olcPixelGameEngine.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="wall_texture_adj.JPG" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
