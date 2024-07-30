@@ -16,6 +16,15 @@ struct RaycastResult { bool bHit; float distance; }	cast_ray(const olc::vf2d& st
 	olc::vf2d hypotLength(0, 0);
 	olc::vi2d mapCheck = start;
 
+	if (dir.x == 0) {
+		unitHypotStep.x = maxDistance;
+		hypotLength.x = maxDistance;
+	}
+	else if (dir.y == 0) {
+		unitHypotStep.y = maxDistance;
+		hypotLength.y = maxDistance;
+	}
+
 	if (dir.x > 0) {
 		unitStep.x = 1;
 		hypotLength.x += (float(mapCheck.x+1) - start.x) * unitHypotStep.x;
@@ -206,6 +215,31 @@ private:
 	}
 
 
+	void drawColumn(int x) {
+		float angle = x / ((float)ScreenWidth()) * FOV - HFOV + player.angle;
+		RaycastResult ray = shootRay(angle);
+		//std::cout << ray.distance << '|' << angle << "RAy\n";
+		float delta = (float)ScreenHeight() / ray.distance / 2;
+		int ceiling = (float)ScreenHeight() / 2 - delta;
+		int floor = (float)ScreenHeight() / 2 + delta;
+		
+		for (int y = 0; y < ceiling; y++) {
+			Draw({ x,y }, olc::BLUE);
+		}
+
+		float depthPerc = 1 - (ray.distance / MAX_DISTANCE);
+		olc::Pixel wallColor = olc::Pixel(depthPerc * 255, depthPerc * 255, depthPerc * 255);
+
+		for (int y = ceiling; y < floor; y++) {
+			Draw({ x,y }, wallColor);
+		}
+
+		for (int y = floor; y < ScreenHeight(); y++) {
+			Draw({ x,y }, olc::DARK_RED);
+		}
+	}
+
+
 	void drawRay(RaycastResult& info, int i) {
 		//olc::Pixel color = olc::Pixel((1-info.distance / MAX_DISTANCE)*255);
 		//auto color = olc::WHITE;
@@ -227,14 +261,9 @@ private:
 	}
 
 	void raycast() {
-		float a = player.angle - HFOV;
-		for (int i = 0; i < rayCount; i++) {
-			RaycastResult result = shootRay(a);
-			if (result.bHit) {
-				//cout << "yes " <<  result.distance << ' ' << i << endl;
-				drawRay(result, i);
-			}
-			a += deltaFOV;
+		for (int x = 0; x < ScreenWidth(); x++) {
+			drawColumn(x);
+			//std::cout << x << "DRAWN COL\n";
 		}
 	}
 
