@@ -162,7 +162,7 @@ private:
 	float HFOV = FOV / 2;
 	float rayCount = 100;
 	float deltaFOV = FOV / rayCount;
-	float MAX_DISTANCE = 5;
+	float MAX_DISTANCE = 16;
 
 	float dist(float x1, float y1, float x2, float y2) {
 		return sqrt(pow(x1 - x2, 2) + pow(y1 - y2, 2));
@@ -209,16 +209,19 @@ private:
 	void drawRay(RaycastResult& info, int i) {
 		//olc::Pixel color = olc::Pixel((1-info.distance / MAX_DISTANCE)*255);
 		//auto color = olc::WHITE;
-		float perc = max(0.0f, powf((1 - info.distance / MAX_DISTANCE),2));
-		olc::Pixel color;
-		color = olc::Pixel(perc * 255, perc * 255, perc * 255);
+		//float perc = max(0.0f, powf((1 - info.distance / MAX_DISTANCE),2));
+		//olc::Pixel color;
+		//color = olc::Pixel(perc * 255, perc * 255, perc * 255);
+		float depthPerc = 1 - (info.distance / MAX_DISTANCE);
+		olc::Pixel color = olc::Pixel(depthPerc * 255, depthPerc * 255, depthPerc * 255);
+
+		int delta = (float)ScreenHeight() / info.distance/2;
+		int ceiling = (float)ScreenHeight() / 2 - delta;
 		
 		float dx = (float)ScreenWidth() / (float)rayCount;
 		float x =  dx * (float) i;
 
-		float halfScreenHeight = ScreenHeight() / 2;
-		int halfHeight = perc * halfScreenHeight; //ScreenHeight() - info.distance * 100;//(1 - info.distance / MAX_DISTANCE) * halfScreenHeight;
-		FillRect(olc::vi2d(x, halfScreenHeight - halfHeight), olc::vi2d(max(1.0f,dx), halfHeight*2), color);
+		FillRect(olc::vi2d(x, ceiling), olc::vi2d(max(1.0f,dx), delta*2), color);
 		//cout << x << ' ' << ScreenHeight() <<  ' ' << rayCount << endl;
 		//DrawLine(olc::vi2d(x, 0), olc::vi2d(x, ScreenHeight()));
 	}
