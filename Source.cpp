@@ -222,6 +222,10 @@ private:
 		float delta = (float)ScreenHeight() / ray.distance / 2;
 		int ceiling = (float)ScreenHeight() / 2 - delta;
 		int floor = (float)ScreenHeight() / 2 + delta;
+
+		// Clamping
+		ceiling = std::max(std::min(ceiling, ScreenHeight()), 0);
+		floor = std::max(std::min(floor, ScreenHeight()), 0);
 		
 		for (int y = 0; y < ceiling; y++) {
 			Draw({ x,y }, olc::BLUE);
