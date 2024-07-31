@@ -407,6 +407,7 @@ public:
 		lampTexture = new olc::Sprite("lamp_sprite.png");
 
 		gameObjects.push_back(new GameObject(lampTexture, 3, 3));
+		gameObjects.push_back(new GameObject(lampTexture, 4, 4));
 		depthBuffer = new float[ScreenWidth()*ScreenHeight()];
 
 		return true;
@@ -455,6 +456,7 @@ public:
 		for (int i = gameObjects.size() - 1; i >= 0; i--) {
 			gameObjects[i]->update(fElapsedTime);
 			if (gameObjects[i]->bRemoved) {
+				delete gameObjects[i];
 				gameObjects.erase(gameObjects.begin() + i);
 			}
 		}
