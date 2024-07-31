@@ -246,7 +246,7 @@ private:
 	}
 
 
-	void drawColumn(int x) {
+	void drawWall(int x) {
 		float angle = x / ((float)ScreenWidth()) * FOV - HFOV + player.angle;
 		olc::vf2d direction(cosf(angle), sinf(angle));
 		olc::vf2d rayStart(player.x, player.y);
@@ -313,7 +313,7 @@ private:
 
 	void raycast() {
 		for (int x = 0; x < ScreenWidth(); x++) {
-			drawColumn(x);
+			drawWall(x);
 			//std::cout << x << "DRAWN COL\n";
 		}
 	}
