@@ -28,5 +28,8 @@
     <Image Include="wall_texture_adj.JPG">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="lamp_sprite.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

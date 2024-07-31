@@ -16,6 +16,16 @@ struct Player {
 	float angle; // In radians
 };
 
+class GameObject {
+public:
+	olc::Sprite* sprite;
+	olc::vf2d pos;
+
+	GameObject(olc::Sprite* sprite, float x, float y) : pos(x,y) {
+		this->sprite = sprite;
+	}
+};
+
 
 struct RaycastResult { bool bHit; float distance; }	cast_ray(const olc::vf2d& start, const olc::vf2d& dir, const std::vector<std::vector<int>>& gameMap, const olc::vi2d& mapSize, float maxDistance = 100.0f) {
 	olc::vf2d unitHypotStep(sqrtf(1 + powf(dir.y / dir.x, 2.0f)), sqrtf(1 + powf(dir.x / dir.y, 2.0f)));
@@ -181,6 +191,10 @@ private:
 	float MAX_DISTANCE = 16;
 
 	olc::Sprite* wallTexture;
+	olc::Sprite* lampTexture;
+	olc::Sprite* fireballTexture;
+
+	std::vector<GameObject*> gameObjects;
 
 	float dist(float x1, float y1, float x2, float y2) {
 		return sqrt(pow(x1 - x2, 2) + pow(y1 - y2, 2));
@@ -246,10 +260,10 @@ private:
 		float textureAngle = std::atan2(hitPoint.y - blockPoint.y - 0.5f, hitPoint.x - blockPoint.x - 0.5f);
 		
 		if (textureAngle >= AngleA && textureAngle < AngleB) {
-			textureOffset = 1 - (hitPoint.x - (int)hitPoint.x);
+			textureOffset = (hitPoint.x - (int)hitPoint.x);
 		}
 		else if (textureAngle >= AngleB && textureAngle < AngleC) {
-			textureOffset = 1 - (hitPoint.y - (int)hitPoint.y);
+			textureOffset = (hitPoint.y - (int)hitPoint.y);
 		}
 		else if (textureAngle >= AngleC && textureAngle < AngleD) {
 			textureOffset = (hitPoint.x - (int)hitPoint.x);
@@ -296,6 +310,34 @@ private:
 		}
 	}
 
+	void drawObjects() {
+		for (GameObject* obj : gameObjects) {
+			//olc::vf2d pPos(player.x, player.y);
+			float angle = std::atan2(obj->pos.x - player.x, obj->pos.y - player.y);
+			if (angle >= player.angle - HFOV && angle <= player.angle + HFOV) {
+				float distance = (olc::vf2d(player.x, player.y) - obj->pos).mag();
+				float delta = ScreenHeight() / distance / 3;
+				int top = (float)ScreenHeight() / 2 - delta;
+				int bottom = (float)ScreenHeight() / 2 + delta;
+				int height = bottom - top;
+				float aspectRatio = (float)obj->sprite->width / obj->sprite->height;
+				int width = aspectRatio * height;
+				// angle = x/ScreenWidth * FOV - HFOV + player.angle
+				int midx = (angle + HFOV - player.angle) * ScreenWidth();
+				int left = midx - width / 2;
+
+				for (int x = 0; x < width; x++) {
+					float u = (float)x / width;
+					for (int y = 0; y < height; y++) {
+						float v = (float)y / height;
+						olc::Pixel color = obj->sprite->Sample(u, v);
+						Draw(left + x, top + y, color);
+					}
+				}
+			}
+		}
+	}
+
 public:
 	Game()
 	{
@@ -311,6 +353,11 @@ public:
 		//raycast();
 		// Called once at the start, so create things here
 		wallTexture = new olc::Sprite("wall_texture_adj.JPG");
+		fireballTexture = new olc::Sprite("fps_fireball1.spr");
+		lampTexture = new olc::Sprite("lamp_sprite.png");
+
+		gameObjects.push_back(new GameObject(lampTexture, 3, 3));
+
 		return true;
 	}
 
@@ -336,7 +383,9 @@ public:
 		}
 		Clear(olc::BLACK);
 		raycast();
+		drawObjects();
 		drawMap();
+
 	
 		return true;
 	}
