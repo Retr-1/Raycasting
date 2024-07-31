@@ -216,6 +216,7 @@ private:
 		{1,0,0,0,0,0,1},
 		{1,1,1,1,1,1,1},
 	};
+	float* depthBuffer;
 
 	int H = gameMap.size();
 	int W = gameMap[0].size();
@@ -232,6 +233,17 @@ private:
 	olc::Sprite* fireballTexture;
 
 	std::vector<GameObject*> gameObjects;
+
+	void Draw(int x, int y, const olc::Pixel& color, float distance) {
+		if (x < 0 || x >= ScreenWidth() || y<0 || y>=ScreenHeight()) {
+			return;
+		}
+
+		if (depthBuffer[y * ScreenWidth() + x] > distance) {
+			depthBuffer[y * ScreenWidth() + x] = distance;
+			olc::PixelGameEngine::Draw(x, y, color);
+		}
+	}
 
 	float dist(float x1, float y1, float x2, float y2) {
 		return sqrt(pow(x1 - x2, 2) + pow(y1 - y2, 2));
@@ -291,7 +303,7 @@ private:
 
 		
 		for (int y = 0; y < ceiling; y++) {
-			Draw(x, y, olc::BLUE);
+			Draw(x, y, olc::BLUE, ray.distance);
 		}
 
 		olc::vf2d hitPoint = direction * ray.distance + rayStart;
@@ -315,33 +327,12 @@ private:
 
 		for (int y = std::max(0,ceiling); y < std::min(ScreenHeight(),floor); y++) {
 			olc::Pixel wallColor = wallTexture->Sample(textureOffset, (y - ceiling) / (float)(floor - ceiling));
-			Draw(x, y, wallColor);
+			Draw(x, y, wallColor, ray.distance);
 		}
 
 		for (int y = floor; y < ScreenHeight(); y++) {
-			Draw(x, y, olc::DARK_RED);
+			Draw(x, y, olc::DARK_RED, ray.distance);
 		}
-	}
-
-
-	void drawRay(RaycastResult& info, int i) {
-		//olc::Pixel color = olc::Pixel((1-info.distance / MAX_DISTANCE)*255);
-		//auto color = olc::WHITE;
-		//float perc = max(0.0f, powf((1 - info.distance / MAX_DISTANCE),2));
-		//olc::Pixel color;
-		//color = olc::Pixel(perc * 255, perc * 255, perc * 255);
-		float depthPerc = 1 - (info.distance / MAX_DISTANCE);
-		olc::Pixel color = olc::Pixel(depthPerc * 255, depthPerc * 255, depthPerc * 255);
-
-		int delta = (float)ScreenHeight() / info.distance/2;
-		int ceiling = (float)ScreenHeight() / 2 - delta;
-		
-		float dx = (float)ScreenWidth() / (float)rayCount;
-		float x =  dx * (float) i;
-
-		FillRect(olc::vi2d(x, ceiling), olc::vi2d(max(1.0f,dx), delta*2), color);
-		//cout << x << ' ' << ScreenHeight() <<  ' ' << rayCount << endl;
-		//DrawLine(olc::vi2d(x, 0), olc::vi2d(x, ScreenHeight()));
 	}
 
 	void raycast() {
@@ -367,7 +358,7 @@ private:
 			else if (angle < -PI) {
 				angle += 2 * PI;
 			}
-			std::cout << angle << ' ' << temp << endl;
+			//std::cout << angle << ' ' << temp << endl;
 			
 			float distance = (olc::vf2d(player.x, player.y) - obj->pos).mag();
 			//float distance = sqrtf(powf(player.x - obj->pos.x, 2) + powf(player.y - obj->pos.y, 2.0f));
@@ -390,7 +381,7 @@ private:
 						float v = (float)y / height;
 						olc::Pixel color = obj->sprite->Sample(u, v);
 						if (color.a > 0)
-							Draw(left + x, top + y, color);
+							Draw(left + x, top + y, color, distance);
 					}
 				}
 			}
@@ -416,6 +407,7 @@ public:
 		lampTexture = new olc::Sprite("lamp_sprite.png");
 
 		gameObjects.push_back(new GameObject(lampTexture, 3, 3));
+		depthBuffer = new float[ScreenWidth()*ScreenHeight()];
 
 		return true;
 	}
@@ -441,6 +433,16 @@ public:
 			player.y -= sinf(player.angle) * fElapsedTime;
 		}
 
+		if (GetKey(olc::Q).bHeld) {
+			player.y -= cosf(player.angle) * fElapsedTime;
+			player.x += sinf(player.angle) * fElapsedTime;
+		}
+
+		if (GetKey(olc::E).bHeld) {
+			player.y += cosf(player.angle) * fElapsedTime;
+			player.x -= sinf(player.angle) * fElapsedTime;
+		}
+
 		if (GetKey(olc::SPACE).bPressed) {
 			Fireball* fireball = new Fireball(fireballTexture, player.x, player.y, cosf(player.angle)*2, sinf(player.angle)*2, gameMap, gameSize);
 			fireball->pos.x += fireball->v.x * 0.1f;
@@ -455,6 +457,8 @@ public:
 				gameObjects.erase(gameObjects.begin() + i);
 			}
 		}
+
+		fill(depthBuffer, depthBuffer + ScreenWidth()*ScreenHeight(), 1000.0f);
 
 		Clear(olc::BLACK);
 		raycast();
