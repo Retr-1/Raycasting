@@ -52,7 +52,9 @@ private:
 	const vector<vector<int>>& gameMap;
 	const olc::vi2d& gameSize;
 public:
-	Fireball(olc::Sprite* sprite, float x, float y, float vx, float vy, vector<vector<int>>& gameMap, olc::vi2d& gameSize) : MovingGameObject(sprite,x,y,vx,vy), gameMap(gameMap), gameSize(gameSize) {}
+	Fireball(olc::Sprite* sprite, float x, float y, float vx, float vy, vector<vector<int>>& gameMap, olc::vi2d& gameSize) : MovingGameObject(sprite,x,y,vx,vy), gameMap(gameMap), gameSize(gameSize) {
+		scale = 0.3f;
+	}
 
 	void update(float elapsedTime) override {
 		MovingGameObject::update(elapsedTime);
@@ -449,7 +451,6 @@ public:
 			Fireball* fireball = new Fireball(fireballTexture, player.x, player.y, cosf(player.angle+noise)*2, sinf(player.angle+noise)*2, gameMap, gameSize);
 			//fireball->pos.x += fireball->v.x * 0.1f + (rand() / (float)RAND_MAX - 0.5f) / 4;
 			//fireball->pos.y += fireball->v.y * 0.1f + (rand() / (float)RAND_MAX - 0.5f) / 4;
-			fireball->scale = 0.3f;
 			gameObjects.push_back(fireball);
 		}
 
