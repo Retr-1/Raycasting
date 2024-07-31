@@ -444,9 +444,10 @@ public:
 		}
 
 		if (GetKey(olc::SPACE).bPressed) {
-			Fireball* fireball = new Fireball(fireballTexture, player.x, player.y, cosf(player.angle)*2, sinf(player.angle)*2, gameMap, gameSize);
-			fireball->pos.x += fireball->v.x * 0.1f;
-			fireball->pos.y += fireball->v.y * 0.1f;
+			float noise = (rand() / (float)RAND_MAX - 0.5f) / 6;
+			Fireball* fireball = new Fireball(fireballTexture, player.x, player.y, cosf(player.angle+noise)*2, sinf(player.angle+noise)*2, gameMap, gameSize);
+			//fireball->pos.x += fireball->v.x * 0.1f + (rand() / (float)RAND_MAX - 0.5f) / 4;
+			//fireball->pos.y += fireball->v.y * 0.1f + (rand() / (float)RAND_MAX - 0.5f) / 4;
 			fireball->scale = 0.3f;
 			gameObjects.push_back(fireball);
 		}
