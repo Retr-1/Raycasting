@@ -25,6 +25,7 @@
     <ClInclude Include="olcPixelGameEngine.h" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="fireball.png" />
     <Image Include="lamp_sprite.png" />
     <Image Include="wall_texture_adj.JPG" />
   </ItemGroup>

@@ -24,9 +24,41 @@ class GameObject {
 public:
 	olc::Sprite* sprite;
 	olc::vf2d pos;
+	float scale = 1;
+	bool bRemoved = false;
 
 	GameObject(olc::Sprite* sprite, float x, float y) : pos(x,y) {
 		this->sprite = sprite;
+	}
+
+	virtual void update(float elapsedTime) {}
+};
+
+class MovingGameObject : public GameObject {
+public:
+	olc::vf2d v;
+
+	MovingGameObject(olc::Sprite* sprite, float x, float y, float vx, float vy) : GameObject(sprite,x,y), v(vx,vy) {
+	}
+
+	virtual void update(float elapsedTime) override {
+		pos.x += v.x * elapsedTime;
+		pos.y += v.y * elapsedTime;
+	}
+};
+
+class Fireball : public MovingGameObject {
+private:
+	const vector<vector<int>>& gameMap;
+	const olc::vi2d& gameSize;
+public:
+	Fireball(olc::Sprite* sprite, float x, float y, float vx, float vy, vector<vector<int>>& gameMap, olc::vi2d& gameSize) : MovingGameObject(sprite,x,y,vx,vy), gameMap(gameMap), gameSize(gameSize) {}
+
+	void update(float elapsedTime) override {
+		MovingGameObject::update(elapsedTime);
+		if (pos.x < 0 || pos.x >= gameSize.x || pos.y < 0 || pos.y >= gameSize.y || gameMap[(int)pos.y][(int)pos.x] == 1) {
+			bRemoved = true;
+		}
 	}
 };
 
@@ -187,6 +219,7 @@ private:
 
 	int H = gameMap.size();
 	int W = gameMap[0].size();
+	olc::vi2d gameSize = olc::vi2d(W, H);
 
 	float FOV = 3.14 / 4;
 	float HFOV = FOV / 2;
@@ -340,7 +373,7 @@ private:
 			//float distance = sqrtf(powf(player.x - obj->pos.x, 2) + powf(player.y - obj->pos.y, 2.0f));
 			
 			if (angle >= -HFOV && angle <= HFOV && distance > 0.5f) {
-				float delta = ScreenHeight() / distance / 2;
+				float delta = ScreenHeight() / distance / 2 * obj->scale;
 				int top = (float)ScreenHeight() / 2 - delta;
 				/*int bottom = (float)ScreenHeight() / 2 + delta;*/
 				int bottom = ScreenHeight() - top;
@@ -379,7 +412,7 @@ public:
 		//raycast();
 		// Called once at the start, so create things here
 		wallTexture = new olc::Sprite("wall_texture_adj.JPG");
-		fireballTexture = new olc::Sprite("fps_fireball1.spr");
+		fireballTexture = new olc::Sprite("fireball.png");
 		lampTexture = new olc::Sprite("lamp_sprite.png");
 
 		gameObjects.push_back(new GameObject(lampTexture, 3, 3));
@@ -407,6 +440,22 @@ public:
 			player.x -= cosf(player.angle) * fElapsedTime;
 			player.y -= sinf(player.angle) * fElapsedTime;
 		}
+
+		if (GetKey(olc::SPACE).bPressed) {
+			Fireball* fireball = new Fireball(fireballTexture, player.x, player.y, cosf(player.angle)*2, sinf(player.angle)*2, gameMap, gameSize);
+			fireball->pos.x += fireball->v.x * 0.1f;
+			fireball->pos.y += fireball->v.y * 0.1f;
+			fireball->scale = 0.3f;
+			gameObjects.push_back(fireball);
+		}
+
+		for (int i = gameObjects.size() - 1; i >= 0; i--) {
+			gameObjects[i]->update(fElapsedTime);
+			if (gameObjects[i]->bRemoved) {
+				gameObjects.erase(gameObjects.begin() + i);
+			}
+		}
+
 		Clear(olc::BLACK);
 		raycast();
 		drawObjects();
