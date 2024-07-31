@@ -14,6 +14,10 @@ struct Player {
 	float x;
 	float y;
 	float angle; // In radians
+
+	olc::vf2d getLookDir() {
+		return olc::vf2d(cosf(x), sinf(y));
+	}
 };
 
 class GameObject {
@@ -231,6 +235,10 @@ private:
 			a += deltaFOV;
 		}
 		//DrawCircle()
+
+		for (GameObject* obj : gameObjects) {
+			FillCircle(obj->pos*10, 2, olc::RED);
+		}
 	}
 
 	RaycastResult shootRay(float angle) {
@@ -311,19 +319,36 @@ private:
 	}
 
 	void drawObjects() {
+		//olc::vf2d playerLookDir = player.getLookDir();
+		//olc::vf2d playerPos(player.x, player.y);
+		//float pAngleRmdr = fmodf(player.angle, 2*PI);
+
 		for (GameObject* obj : gameObjects) {
 			//olc::vf2d pPos(player.x, player.y);
-			float angle = std::atan2(obj->pos.x - player.x, obj->pos.y - player.y);
-			if (angle >= player.angle - HFOV && angle <= player.angle + HFOV) {
-				float distance = (olc::vf2d(player.x, player.y) - obj->pos).mag();
-				float delta = ScreenHeight() / distance / 3;
+			//float angleToX = std::atan2(obj->pos.x - player.x, obj->pos.y - player.y);
+			float angle = -std::atan2f(sinf(player.angle), cosf(player.angle)) + std::atan2f(obj->pos.y - player.y, obj->pos.x - player.x);
+			float temp = angle;
+			if (angle > PI) {
+				angle -= 2 * PI;
+			}
+			else if (angle < -PI) {
+				angle += 2 * PI;
+			}
+			std::cout << angle << ' ' << temp << endl;
+			
+			float distance = (olc::vf2d(player.x, player.y) - obj->pos).mag();
+			//float distance = sqrtf(powf(player.x - obj->pos.x, 2) + powf(player.y - obj->pos.y, 2.0f));
+			
+			if (angle >= -HFOV && angle <= HFOV && distance > 0.5f) {
+				float delta = ScreenHeight() / distance / 2;
 				int top = (float)ScreenHeight() / 2 - delta;
-				int bottom = (float)ScreenHeight() / 2 + delta;
+				/*int bottom = (float)ScreenHeight() / 2 + delta;*/
+				int bottom = ScreenHeight() - top;
 				int height = bottom - top;
 				float aspectRatio = (float)obj->sprite->width / obj->sprite->height;
 				int width = aspectRatio * height;
 				// angle = x/ScreenWidth * FOV - HFOV + player.angle
-				int midx = (angle + HFOV - player.angle) * ScreenWidth();
+				int midx = (angle + HFOV)/FOV * ScreenWidth();
 				int left = midx - width / 2;
 
 				for (int x = 0; x < width; x++) {
@@ -331,7 +356,8 @@ private:
 					for (int y = 0; y < height; y++) {
 						float v = (float)y / height;
 						olc::Pixel color = obj->sprite->Sample(u, v);
-						Draw(left + x, top + y, color);
+						if (color.a > 0)
+							Draw(left + x, top + y, color);
 					}
 				}
 			}
